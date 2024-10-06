@@ -135,3 +135,67 @@ class AsteroidDataView(View):
         json_data = combined_data.to_dict(orient='records')
 
         return JsonResponse(json_data, safe=False)
+
+class Hazards(View):
+    def get(self, request):
+        # Set your API key here
+        api_key = 'AMvTGeTbBACkgqeav4K83Lw9lAVjwUFy6TpRLn1T'
+
+        # Prepare the API URL
+        url = f'https://api.nasa.gov/neo/rest/v1/feed?api_key={api_key}'
+        # Make the API request
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            data = response.json()
+            # Preprocess the response to keep only hazardous asteroids and estimated diameters in meters
+            self.preprocess_asteroids(data)
+            return JsonResponse(data, safe=False)
+        else:
+            return JsonResponse({'error': 'Failed to retrieve data'}, status=response.status_code)
+
+    def preprocess_asteroids(self, data):
+        # Process the near_earth_objects section
+        near_earth_objects = data.get('near_earth_objects', {})
+        filtered_data = {}
+
+        for date, asteroids in near_earth_objects.items():
+            filtered_asteroids = []
+
+            for asteroid in asteroids:
+                # Filter by is_potentially_hazardous_asteroid == True
+                if asteroid.get('is_potentially_hazardous_asteroid', False):
+                    # Keep only the estimated diameter in meters
+                    if 'estimated_diameter' in asteroid:
+                        estimated_diameter = asteroid['estimated_diameter']
+                        # Replace the estimated_diameter with only meters
+                        asteroid['estimated_diameter'] = {
+                            'meters': {
+                                'estimated_diameter_min': estimated_diameter['meters']['estimated_diameter_min'],
+                                'estimated_diameter_max': estimated_diameter['meters']['estimated_diameter_max'],
+                            }
+                        }
+                        # Add size field based on estimated_diameter_max
+                        max_diameter = estimated_diameter['meters']['estimated_diameter_max']
+                        asteroid['size'] = self.categorize_size(max_diameter)
+
+                    # Add to the filtered list
+                    filtered_asteroids.append(asteroid)
+
+            # Add filtered asteroids to the corresponding date
+            if filtered_asteroids:
+                filtered_data[date] = filtered_asteroids
+
+        # Replace the original near_earth_objects with the filtered data
+        data['near_earth_objects'] = filtered_data
+
+    def categorize_size(self, max_diameter):
+        """Categorizes the size of the asteroid based on its maximum diameter."""
+        if max_diameter < 100:
+            return 'small'
+        elif max_diameter < 500:
+            return 'medium'
+        elif max_diameter < 1000:
+            return 'large'
+        else:
+            return 'extra_large'
