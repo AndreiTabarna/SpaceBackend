@@ -1,1 +1,1 @@
-web: gunicorn spaceapi.wsgi --log-file -
+web: gunicorn asteroids.wsgi --log-file -
