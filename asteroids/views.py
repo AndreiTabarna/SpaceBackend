@@ -73,6 +73,9 @@ class PlanetDataView(View):
         # Read CSV file
         data = pd.read_csv(csv_file_path)
 
+        # Replace NaN values with 0
+        data = data.fillna(0)
+
         # Convert to JSON
         json_data = data.to_dict(orient='records')
 
@@ -87,6 +90,9 @@ class CometDataView(View):
         # Read CSV file
         data = pd.read_csv(csv_file_path)
 
+        # Replace NaN values with 0
+        data = data.fillna(0)
+
         # Convert to JSON
         json_data = data.to_dict(orient='records')
 
@@ -100,6 +106,9 @@ class MoonDataView(View):
 
         # Read CSV file
         data = pd.read_csv(csv_file_path)
+
+        # Replace NaN values with 0
+        data = data.fillna(0)
 
         # Convert to JSON
         json_data = data.to_dict(orient='records')
@@ -118,6 +127,9 @@ class AsteroidDataView(View):
 
         # Append data from asteroids2.csv to asteroids.csv
         combined_data = pd.concat([data1, data2], ignore_index=True)
+
+        # Replace NaN values with 0
+        combined_data = combined_data.fillna(0)
 
         # Convert to JSON
         json_data = combined_data.to_dict(orient='records')
